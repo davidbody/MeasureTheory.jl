@@ -54,6 +54,10 @@ function Base.show_unquoted(io::IO, μ::ProductMeasure, indent::Int, prec::Int)
     return nothing
 end
 
+function logdensity(d::ProductMeasure, x)
+    mapreduce((pj,xj) -> logdensity(d.f(pj), xj), +, d.pars, x)
+end
+
 
 ###############################################################################
 # I <: Tuple
@@ -68,19 +72,20 @@ function Base.show(io::IO, ::MIME"text/plain", μ::ProductMeasure{F,T}) where {F
     print(io, join(string.(marginals(μ)), " ⊗ "))
 end
 
-function logdensity(d::ProductMeasure{F,T}, x::Tuple) where {F,T<:Tuple}
-    mapreduce(logdensity, +, d.f.(d.pars), x)
-end
 
 ###############################################################################
 # I <: AbstractArray
 
 marginals(d::ProductMeasure{F,A}) where {F,A<:AbstractArray} = mappedarray(d.f, d.pars)
 
-function logdensity(d::ProductMeasure, x)
-    mapreduce(logdensity, +, marginals(d), x)
-end
 
+
+# using Symbolics
+
+# function logdensity(d::ProductMeasure, x::Symbolics.Arr)
+#     Symbolics._mapreduce(identity, +, x, Colon(), (:init => false,))
+#     mapreduce(logdensity, +, marginals(d), x)
+# end
 
 function TV.as(d::ProductMeasure{F,A}) where {F,A<:AbstractArray}
     d1 = marginals(d).f(first(marginals(d).data))
